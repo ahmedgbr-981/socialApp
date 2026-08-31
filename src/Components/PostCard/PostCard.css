@@ -1,0 +1,22 @@
+.post-card { width: min(100%, 680px); margin: 0 auto 1.5rem; overflow: hidden; border: 1px solid #e6e9e7; border-radius: 18px; background: #fff; box-shadow: 0 12px 35px rgba(20, 45, 39, 0.07); color: #18332d; }
+.post-card__header, .post-card__actions, .post-card__stats { display: flex; align-items: center; }
+.post-card__header { gap: .75rem; padding: 1.15rem 1.25rem .9rem; }
+.post-card__avatar { width: 44px; height: 44px; flex: 0 0 44px; border: 2px solid #d8eee7; border-radius: 50%; object-fit: cover; }
+.post-card__author { display: grid; gap: .2rem; min-width: 0; }
+.post-card__author strong { overflow: hidden; color: #173d34; font-size: .95rem; text-overflow: ellipsis; white-space: nowrap; }
+.post-card__author span, .post-card__stats { color: #71817c; font-size: .78rem; }
+.post-card__author span { display: inline-flex; align-items: center; gap: .3rem; }
+.post-card__author svg, .post-card__stats svg { font-size: .85rem; }
+.post-card__icon-button { display: grid; width: 36px; height: 36px; flex: 0 0 36px; margin-left: auto; place-items: center; border: 0; border-radius: 50%; background: transparent; color: #687d76; cursor: pointer; font-size: 1.25rem; transition: background 160ms ease, color 160ms ease; }
+.post-card__icon-button:hover, .post-card__icon-button:focus-visible { background: #edf7f3; color: #087f68; outline: none; }
+.post-card__icon-button.is-saved { color: #087f68; }
+.post-card__body { margin: 0; padding: .15rem 1.25rem 1.1rem; color: #304840; font-size: .98rem; line-height: 1.65; white-space: pre-wrap; }
+.post-card__media { overflow: hidden; background: #e9f1ee; }
+.post-card__media img { display: block; width: 100%; max-height: 620px; object-fit: cover; }
+.post-card__stats { justify-content: space-between; padding: .95rem 1.25rem .7rem; }
+.post-card__stats span:first-child { display: inline-flex; align-items: center; gap: .35rem; }
+.post-card__like-count.is-liked, .post-card__action.is-liked { color: #d6535d; }
+.post-card__actions { gap: .25rem; padding: .25rem .75rem .8rem; border-top: 1px solid #edf0ee; }
+.post-card__action { display: inline-flex; min-height: 40px; flex: 1; align-items: center; justify-content: center; gap: .4rem; border: 0; border-radius: 10px; background: transparent; color: #64756f; cursor: pointer; font: inherit; font-size: .82rem; font-weight: 600; transition: background 160ms ease, color 160ms ease; }
+.post-card__action:hover, .post-card__action:focus-visible { background: #f2f8f5; color: #087f68; outline: none; }
+@media (max-width: 480px) { .post-card { border-radius: 12px; } .post-card__header, .post-card__body, .post-card__stats { padding-right: 1rem; padding-left: 1rem; } .post-card__action { font-size: 0; } .post-card__action svg { font-size: 1.1rem; } }

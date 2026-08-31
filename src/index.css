@@ -1,0 +1,16 @@
+@import "tailwindcss";
+@plugin "daisyui";
+@import "@heroui/styles"; 
+
+html{
+    scroll-behavior: smooth;
+    scrollbar-width: none;
+}
+
+@media (prefers-color-scheme: dark) {
+    .register-gender-select,
+    .register-gender-select option {
+        background-color: white;
+        color: black;
+    }
+}
