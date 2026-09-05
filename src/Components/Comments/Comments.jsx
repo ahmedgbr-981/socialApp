@@ -232,7 +232,7 @@ function deleComment(cId){
           })}
         </div>
       )}
-    <CreateComment/></>
+    <CreateComment postId={postId}/></>
       }
       
      

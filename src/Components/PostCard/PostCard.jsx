@@ -1,4 +1,3 @@
-import { useContext, useRef, useState } from "react";
 import {
   FiBookmark,
   FiClock,
@@ -11,147 +10,49 @@ import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 
 import "./PostCard.css";
-import { Link, useParams } from "react-router-dom";
+import { Link } from "react-router-dom";
 import {
   DrawerTrigger,
   Dropdown,
   Label,
   Modal,
-  ModalTrigger,
 } from "@heroui/react";
 import { FaImage, FaPen, FaRegTrashAlt } from "react-icons/fa";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import delePostApi from "../../api/deletPost.api";
-import { UserContext } from "../Context/UserContext";
-import { useForm } from "react-hook-form";
-import updatePostApi from "../../api/updatePost.api";
 import { IoMdCloseCircle } from "react-icons/io";
+import CreateComment from "../CreateComment";
+import usePostCard from "../../Hooks/usePostCard";
 
 dayjs.extend(relativeTime);
 
-function getUser(post) {
-  return post?.user;
-}
-
-function getUserName(user) {
-  return user?.name;
-}
-
 export default function PostCard({ post }) {
-  // console.log(post);
-
-  const initialLikeCount = Number(post?.likesCount ?? 0);
-  const initiallyLiked = Boolean(post?.isLiked || post?.liked);
-  const [likeState, setLikeState] = useState({
-    count: initialLikeCount,
-    isLiked: initiallyLiked,
-  });
-  const [isSaved, setIsSaved] = useState(false);
-  const author = getUser(post);
-  const authorName = getUserName(author);
-  const avatar = author?.photo;
-  const postImage = post?.image;
-  const comments = Number(post?.commentsCount ?? 0);
-  const createdAt = post?.createdAt;
-  const qc = useQueryClient();
-  const { logedUserid } = useContext(UserContext);
-  const [imgPreview, setImgPreview] = useState(null);
-  const [modale2Opend, setModale2Opend] = useState(false);
-
   const {
-    data,
-    isPending,
-    isError,
-    mutate: delePostMutate,
-  } = useMutation({
-    mutationFn: (id) => delePostApi(id),
-    onSuccess: () => {
-      console.log("deleted");
-      qc.invalidateQueries({
-        queryKey: ["allPosts"],
-      });
-      qc.invalidateQueries({
-        queryKey: ["myPosts"],
-      });
-    },
-    onError: (error) => {
-      console.error(
-        "Unable to delete post:",
-        error.response?.data || error.message,
-      );
-    },
-  });
-
-  const {
-    data: updatePostData,
-    isPending: penUpdate,
-    isError: iserrorUpdate,
-    mutate: upPostMutate,
-  } = useMutation({
-    mutationFn: ({ postId, upData }) => updatePostApi(postId, upData),
-    onSuccess: () => {
-      console.log("updated");
-      qc.invalidateQueries({
-        queryKey: ["allPosts"],
-      });
-      qc.invalidateQueries({
-        queryKey: ["myPosts"],
-      });
-    },
-    onError: (error) => {
-      console.error(
-        "Unable to update post:",
-        error.response?.data || error.message,
-      );
-    },
-  });
-
-  function delePost(id) {
-    console.log("deleting...");
-
-    delePostMutate(id);
-  }
-
-  const { handleSubmit, register, setValue } = useForm({
-    defaultValues: {
-      body: "",
-      image: "",
-    },
-  });
-
-  function editPost(post) {
-    if (post.body) {
-      setValue("body", post.body);
-    }
-    if (post.image) {
-      setImgPreview(post.image);
-    }
-    console.log("checked");
-  }
-  const formData = new FormData();
-  function sendUpdates(values) {
-    console.log("ok");
-    if (!values.body && !values.image[0]) {
-      return;
-    }
-    console.log("values", values);
-    if (values.body) {
-      formData.append("body", values.body);
-    }
-    if (values.image[0]) {
-      formData.append("image", values.image[0]);
-    }
-    upPostMutate({ postId: post._id, upData: formData });
-  }
-  function handleImgPreview(e) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const path = URL.createObjectURL(file);
-    setImgPreview(path);
-  }
+    authorName,
+    avatar,
+    postImage,
+    comments,
+    createdAt,
+    isOwner,
+    likeState,
+    isLikePending,
+    isSaved,
+    setIsSaved,
+    likePost,
+    deletePost,
+    startEditing,
+    handleSubmit,
+    register,
+    sendUpdates,
+    handleImagePreview,
+    imgPreview,
+    setImgPreview,
+    isEditModalOpen,
+    setIsEditModalOpen,
+    showCommentForm,
+    setShowCommentForm,
+  } = usePostCard(post);
   return (
-    <article className="post-card">
+<> 
+   <article className="post-card relative">
       <header className="post-card__header">
         <img
           className="post-card__avatar"
@@ -165,7 +66,7 @@ export default function PostCard({ post }) {
             {createdAt ? dayjs(createdAt).fromNow() : "Just now"}
           </span>
         </div>
-        {post.user._id === logedUserid ? (
+        {isOwner ? (
           <span
             className="post-card__icon-button"
             type="button"
@@ -183,8 +84,7 @@ export default function PostCard({ post }) {
                   <Dropdown.Item id="edit-file" textValue="Edit comment">
                     <button
                       onClick={() => {
-                        setModale2Opend(true);
-                        editPost(post);
+                        startEditing();
                       }}
                       type="button"
                       className="flex justify-between gap-3 items-center"
@@ -202,7 +102,7 @@ export default function PostCard({ post }) {
                     <button
                       className="flex justify-between gap-3 items-center"
                       onClick={() => {
-                        delePost(post?._id ?? post?.id);
+                        deletePost(post?._id ?? post?.id);
                       }}
                     >
                       <Label className="text-black">Delete post</Label>
@@ -242,16 +142,13 @@ export default function PostCard({ post }) {
               : "post-card__action"
           }
           type="button"
-          onClick={() =>
-            setLikeState(({ count, isLiked }) => ({
-              count: isLiked ? count - 1 : count + 1,
-              isLiked: !isLiked,
-            }))
-          }
+          disabled={isLikePending}
+          onClick={() => likePost()}
         >
           <FiHeart aria-hidden="true" /> Like
         </button>
-        <button className="post-card__action" type="button">
+        <button className="post-card__action" type="button" onClick={()=>{setShowCommentForm((prev)=>!prev)
+        }}>
           <FiMessageCircle aria-hidden="true" /> Comment
         </button>
         <button className="post-card__action" type="button">
@@ -271,7 +168,7 @@ export default function PostCard({ post }) {
           <FiBookmark aria-hidden="true" />
         </button>
       </div>
-      <Modal isOpen={modale2Opend} onOpenChange={setModale2Opend}>
+      <Modal isOpen={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
         <Modal.Backdrop>
           <Modal.Container>
             <Modal.Dialog className="sm:max-w-90">
@@ -288,9 +185,8 @@ export default function PostCard({ post }) {
                     placeholder="Write something..."
                   ></textarea>
                   <label>
-                    {/* <input  {...register('image')} onChange={handleImgPreview} type="file" hidden/> */}
                     <input
-                      {...register("image", { onChange: handleImgPreview })}
+                      {...register("image", { onChange: handleImagePreview })}
                       type="file"
                       accept="image/*"
                       hidden
@@ -298,16 +194,16 @@ export default function PostCard({ post }) {
                     <FaImage className="text-4xl cursor-pointer hover:text-slate-700" />
                   </label>
                   <div className="flex relative">
-                    {
-                      imgPreview&&
-                    <IoMdCloseCircle onClick={()=>setImgPreview(null)} title="remove image" className="absolute top-2 cursor-pointer hover:text-red-400 right-0 text-3xl text-black"/>
-                    }
-                  <img src={imgPreview} alt="" className="rounded-2xl py-3" />
+                    {imgPreview && (
+                      <IoMdCloseCircle
+                        onClick={() => setImgPreview(null)}
+                        title="remove image"
+                        className="absolute top-2 cursor-pointer hover:text-red-400 right-0 text-3xl text-black"
+                      />
+                    )}
+                    <img src={imgPreview} alt="" className="rounded-2xl py-3" />
                   </div>
                   <button
-                    onClick={() => {
-                      setModale2Opend(false);
-                    }}
                     type="submit"
                     className="text-black w-full bg-gray-600 rounded-2xl py-2 cursor-pointer"
                   >
@@ -320,6 +216,14 @@ export default function PostCard({ post }) {
           </Modal.Container>
         </Modal.Backdrop>
       </Modal>
+
+    {
+      showCommentForm &&  <div className=" bg-slate-700/5 flex justify-center items-center">
+        <CreateComment postId={post?._id ?? post?.id}  setShowCommentForm={setShowCommentForm} />
+      </div>
+     }
     </article>
+    
+     </>
   );
 }

@@ -6,7 +6,7 @@ import useCreatComment from '../Hooks/useCreatComment';
 
 const fallbackAvatar = 'https://ui-avatars.com/api/?background=0f766e&color=fff&name=Social+User'
 
-export default function CreateComment() {
+export default function CreateComment({ postId ,setShowCommentForm}) {
 
   const {
     isPending,
@@ -15,13 +15,14 @@ export default function CreateComment() {
     register,
     handleSubmit,
     sendCommentData,
-  } = useCreatComment()
+  } = useCreatComment(postId,setShowCommentForm)
+
 
   
   if(isError){return error.message}
   return (
    <>
-    <form className="comment-composer" onSubmit={handleSubmit(sendCommentData)}>
+    <form className="comment-composer w-full" onSubmit={handleSubmit(sendCommentData)}>
         <img src={fallbackAvatar} alt="" aria-hidden="true" />
         <input {...register('content')} type="text" placeholder="Add comment..." aria-label="Add comment" />
         <label>

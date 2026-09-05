@@ -4,12 +4,13 @@ import createCommentApi from '../api/createComment.api';
 import { useParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 
-export default function useCreatComment() {
+export default function useCreatComment(postId,setShowCommentForm) {
     const {id}=useParams()
+    const commentPostId = postId ?? id
 const queryClient=useQueryClient()
  
   const {data,isPending,isError,error,mutate}=useMutation({
-      mutationFn:(formData)=>createCommentApi(id,formData),
+      mutationFn:(formData)=>createCommentApi(commentPostId,formData),
       mutationKey:['createComment'],
       onSuccess:(data)=>{
         console.log('comment created',data?.data?.message);
@@ -18,6 +19,13 @@ const queryClient=useQueryClient()
         queryClient.invalidateQueries({
           queryKey:['postComments']
         })
+        queryClient.invalidateQueries({
+          queryKey:['allPosts']
+        })
+        queryClient.invalidateQueries({
+          queryKey:['myPosts']
+        })
+        setShowCommentForm(false)
         },
         
     })
