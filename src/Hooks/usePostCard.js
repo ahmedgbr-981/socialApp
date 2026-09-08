@@ -11,11 +11,9 @@ function getUserId(user) {
 }
 
 function hasUserLikedPost(post, user) {
-  // Prefer the API's computed flag when it is available.
   if (post?.isLiked !== undefined) return Boolean(post.isLiked);
   if (post?.liked !== undefined) return Boolean(post.liked);
 
-  // Older responses may only include the users who liked the post.
   const currentUserId = getUserId(user);
   const likes = Array.isArray(post?.likes) ? post.likes : [];
 
@@ -36,7 +34,6 @@ export default function usePostCard(post) {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [showCommentForm, setShowCommentForm] = useState(false);
 
-  // Refresh the local display when fresh post data or the logged-in user arrives.
   useEffect(() => {
     setLikeState({
       count: Number(post?.likesCount ?? 0),
@@ -44,7 +41,6 @@ export default function usePostCard(post) {
     });
   }, [post, logedUserid]);
 
-  // All post views should reflect changes made by any post mutation.
   const invalidatePostQueries = () => {
     queryClient.invalidateQueries({ queryKey: ["allPosts"] });
     queryClient.invalidateQueries({ queryKey: ["myPosts"] });
@@ -79,7 +75,6 @@ export default function usePostCard(post) {
   } = useMutation({
     mutationFn: () => likePostApi(postId),
     onMutate: () => {
-      // Update immediately for responsive UI; onError reverses this change.
       setLikeState(({ count, isLiked }) => ({
         count: isLiked ? count - 1 : count + 1,
         isLiked: !isLiked,
@@ -106,7 +101,6 @@ export default function usePostCard(post) {
   });
 
   function startEditing() {
-    // Populate the form from the current post before opening the modal.
     setValue("body", post?.body ?? "");
     setImgPreview(post?.image ?? null);
     setIsEditModalOpen(true);
@@ -115,7 +109,6 @@ export default function usePostCard(post) {
   function sendUpdates(values) {
     if (!values.body && !values.image?.[0]) return;
 
-    // Posts accept multipart data because the update may include an image.
     const formData = new FormData();
     if (values.body) formData.append("body", values.body);
     if (values.image?.[0]) formData.append("image", values.image[0]);

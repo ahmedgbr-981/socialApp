@@ -25,7 +25,7 @@ export default function Home() {
   
   return (
     <>
-           <CreatePost userPhoto={myPro.photo}/>
+           <CreatePost userPhoto={myPro?.photo}/>
               {
     data?.map((post)=><PostCard key={post._id} post={post}/>)
    }

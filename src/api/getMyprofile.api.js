@@ -7,7 +7,7 @@ export default async function getMyProfile(){
             Authorization:`Bearer ${localStorage.getItem('userToken')}`
         }
     })
-    console.log('profile',data);
+    // console.log('profile',data);
     return data
     
 }
