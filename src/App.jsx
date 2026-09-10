@@ -11,6 +11,7 @@ import UserContextProvider from "./Components/Context/UserContext";
 import AuthRoute from "./Components/AuthRoute";
 import ProtectedRoute from "./Components/ProtectedRoute";
 import Postdetailes from "./Components/Postdetailes";
+import Bookmarks from "./Components/Bookmarks/Bookmarks";
 
 const query = new QueryClient();
 const router = createHashRouter([
@@ -33,6 +34,10 @@ const router = createHashRouter([
       {
         path: "profile",
         element:<ProtectedRoute> <Profile /></ProtectedRoute>,
+      },
+      {
+        path: "bookmarks",
+        element:<ProtectedRoute> <Bookmarks /></ProtectedRoute>,
       },
       {
         path: "login",

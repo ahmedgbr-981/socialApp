@@ -36,6 +36,9 @@ export default function Profile() {
       enabled:Boolean(myId),
       select:(myPosts)=>myPosts?.data?.posts 
   })
+
+ 
+
   const {data:proPic,isPending,mutate}=useMutation({
     mutationFn:(photo)=>uploadProPic(photo),
     onSuccess:async()=>{
@@ -136,6 +139,7 @@ export default function Profile() {
           <a className="profile-tab profile-tab--active" href="#posts">Posts</a>
           <a className="profile-tab" href="#about">About</a>
           <a className="profile-tab" href="#photos">Photos</a>
+          <a className="profile-tab" href="#bookmarks">Bookmarks</a>
         </nav>
       </section>
 

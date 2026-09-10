@@ -17,10 +17,12 @@ import {
   Label,
   Modal,
 } from "@heroui/react";
-import { FaImage, FaPen, FaRegTrashAlt } from "react-icons/fa";
+import { FaBookmark, FaImage, FaPen, FaRegTrashAlt } from "react-icons/fa";
 import { IoMdCloseCircle } from "react-icons/io";
 import CreateComment from "../CreateComment";
 import usePostCard from "../../Hooks/usePostCard";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import bookMark_unBookMark from "../../api/bookMark_unBookMark.api";
 
 dayjs.extend(relativeTime);
 
@@ -34,8 +36,6 @@ export default function PostCard({ post }) {
     isOwner,
     likeState,
     isLikePending,
-    isSaved,
-    setIsSaved,
     likePost,
     deletePost,
     startEditing,
@@ -50,6 +50,20 @@ export default function PostCard({ post }) {
     showCommentForm,
     setShowCommentForm,
   } = usePostCard(post);
+
+  const queryClient=useQueryClient()
+  const {mutate}=useMutation({
+    mutationFn:(id)=>bookMark_unBookMark(id),
+    onSuccess:()=>{
+      console.log('booked');
+      queryClient.invalidateQueries({
+        queryKey:['allPosts']
+      })
+      queryClient.invalidateQueries({
+        queryKey:['bookmarks']
+      })
+    }
+  })
   return (
 <> 
    <article className="post-card relative">
@@ -155,17 +169,20 @@ export default function PostCard({ post }) {
           <FiShare2 aria-hidden="true" /> Share
         </button>
         <button
-          className={
-            isSaved
-              ? "post-card__icon-button is-saved"
-              : "post-card__icon-button"
-          }
+         
+         className="text-2xl cursor-pointer"
           type="button"
           aria-label="Save post"
           title="Save post"
-          onClick={() => setIsSaved((saved) => !saved)}
+        onClick={()=>mutate(post?._id)}  
         >
-          <FiBookmark aria-hidden="true" />
+          {
+             post.bookmarked
+              ? <FaBookmark  />
+
+              :           <FiBookmark aria-hidden="true"  />
+
+          }
         </button>
       </div>
       <Modal isOpen={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
