@@ -5,6 +5,7 @@ import PostCard from '../PostCard/PostCard'
 import Loading from '../Loading'
 import CreatePost from '../CreatePost'
 import getMyProfile from '../../api/getMyprofile.api'
+import FollowSuggestions from '../FollowSuggestions/FollowSuggestions'
 
 export default function Home() {
   const {data,isLoading,isError,error}=useQuery({
@@ -20,14 +21,15 @@ export default function Home() {
       })
   
   if(isLoading){return <Loading/>}
-  console.log(data);
+  console.log(data,'profile',myPro);
   
   
   return (
     <>
            <CreatePost userPhoto={myPro?.photo}/>
+           <FollowSuggestions followingArr={myPro.following}/>
               {
-    data?.map((post)=><PostCard key={post._id} post={post}/>)
+    data?.map((post)=><PostCard key={post._id} post={post} followingArr={myPro.following}/>)
    }
     </>
   )
