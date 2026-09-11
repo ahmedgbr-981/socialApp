@@ -26,11 +26,21 @@ export default function Home() {
   
   return (
     <>
-           <CreatePost userPhoto={myPro?.photo}/>
-           <FollowSuggestions followingArr={myPro.following}/>
-              {
-    data?.map((post)=><PostCard key={post._id} post={post} followingArr={myPro.following}/>)
-   }
+      <CreatePost userPhoto={myPro?.photo} />
+      <FollowSuggestions followingArr={myPro?.following} />
+      {data?.map((post) => {
+        const postToRender = post?.isShare ? post?.sharedPost ?? post : post;
+        const sharedBy = post?.isShare ? post?.user : null;
+
+        return (
+          <PostCard
+            key={post?._id ?? post?.sharedPost?._id}
+            post={postToRender}
+            sharedBy={sharedBy}
+            followingArr={myPro?.following}
+          />
+        );
+      })}
     </>
-  )
+  );
 }

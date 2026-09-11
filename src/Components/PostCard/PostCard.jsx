@@ -19,10 +19,12 @@ import usePostCard from "../../Hooks/usePostCard";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import bookMark_unBookMark from "../../api/bookMark_unBookMark.api";
 import follow_unfollow_user from "../../api/follow&unfollow.api";
+import Swal from "sweetalert2";
+import sharePostApi from "../../api/sharePostApi.api";
 
 dayjs.extend(relativeTime);
 
-export default function PostCard({ post,followingArr }) {
+export default function PostCard({ post, followingArr, sharedBy }) {
   const {
     authorName,
     avatar,
@@ -48,6 +50,9 @@ export default function PostCard({ post,followingArr }) {
   } = usePostCard(post);
 
   const queryClient = useQueryClient();
+  const sharerName = sharedBy?.name || sharedBy?.userName || "Someone";
+  const sharerAvatar = sharedBy?.photo || "https://ui-avatars.com/api/?name=User";
+  const isSharedPost = Boolean(sharedBy);
   const { mutate } = useMutation({
     mutationFn: (id) => bookMark_unBookMark(id),
     onSuccess: () => {
@@ -61,28 +66,66 @@ export default function PostCard({ post,followingArr }) {
     },
   });
 
-  const {mutate:follow_unfollow,data:followingData} = useMutation({
-    mutationFn:(id)=>follow_unfollow_user(id),
-    onSuccess:(followingData)=>{
-
+  const { mutate: follow_unfollow, data: followingData } = useMutation({
+    mutationFn: (id) => follow_unfollow_user(id),
+    onSuccess: (followingData) => {
       queryClient.invalidateQueries({
-        queryKey:['allPosts']
-      })
+        queryKey: ["allPosts"],
+      });
       queryClient.invalidateQueries({
-        queryKey:['profile']
-      })
+        queryKey: ["profile"],
+      });
       // console.log('followed');
       // console.log(followingData);
       // console.log('following array',followingArr);
-      
-    }
-  })
+    },
+  });
 
+  const { mutate: sharePostMutate } = useMutation({
+    mutationFn: sharePostApi,
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["allPosts"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["profile"],
+      });
+      Swal.fire({
+        title: "shared!",
+        icon: "success",
+      });
+    },
+    onError: () => {
+      Swal.fire({
+        title: "Couldn't share this post",
+        icon: "error",
+      });
+    },
+  });
 
-  
+  function sharePost(id) {
+    sharePostMutate(id);
+  }
+``
   return (
     <>
       <article className="post-card relative">
+        {isSharedPost && (
+          <div className="flex items-center gap-2 px-2 pt-2 text-sm text-slate-600">
+            <FiShare2 aria-hidden="true" />
+            <div className="flex items-center gap-2">
+              <img
+                src={sharerAvatar}
+                alt={`${sharerName}'s avatar`}
+                className="w-6 h-6 rounded-full object-cover"
+              />
+              <span>
+                <strong>{sharerName}</strong> shared this post
+              </span>
+            </div>
+          </div>
+        )}
+
         <header className="post-card__header">
           <img
             className="post-card__avatar"
@@ -95,7 +138,14 @@ export default function PostCard({ post,followingArr }) {
             ) : (
               <strong className="flex gap-4">
                 {authorName}{" "}
-                <p className="bg-slate-400 rounded-2xl px-2 cursor-pointer hover:bg-slate-300" onClick={()=>follow_unfollow(post.user._id)}>{followingArr.includes(post.user._id)? 'Following':'Follow'}</p>
+                <p
+                  className="bg-slate-400 rounded-2xl px-2 cursor-pointer hover:bg-slate-300"
+                  onClick={() => follow_unfollow(post.user._id)}
+                >
+                  {followingArr?.includes(post.user._id)
+                    ? "Following"
+                    : "Follow"}
+                </p>
               </strong>
             )}
             <span>
@@ -195,7 +245,24 @@ export default function PostCard({ post,followingArr }) {
           >
             <FiMessageCircle aria-hidden="true" /> Comment
           </button>
-          <button className="post-card__action" type="button">
+          <button
+            className="post-card__action"
+            type="button"
+            onClick={() => {
+              Swal.fire({
+                title: "Do you want to share this post?",
+                icon: "question",
+                showCancelButton: true,
+                confirmButtonColor: "#3085d6",
+                cancelButtonColor: "#d33",
+                confirmButtonText: "Yes, share it!",
+              }).then((result) => {
+                if (result.isConfirmed) {
+                  sharePost(post._id);
+                }
+              });
+            }}
+          >
             <FiShare2 aria-hidden="true" /> Share
           </button>
           <button
