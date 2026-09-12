@@ -16,8 +16,19 @@ import Loading from "../Loading";
 import { CiImageOn } from "react-icons/ci";
 import { IoReloadSharp } from "react-icons/io5";
 import like_unlike_comment from "../../api/like&unlikeComment.api";
+import getCommentReplies from "../../api/getCommentReplies.api";
+import CommentReplies from "../CommentReplies/CommentReplies";
 
 dayjs.extend(relativeTime);
+
+function getReplyCount(response, fallbackComment) {
+  return response?.data?.replies?.length
+    ?? response?.data?.data?.replies?.length
+    ?? response?.replies?.length
+    ?? fallbackComment?.repliesCount
+    ?? fallbackComment?.replies?.length
+    ?? 0;
+}
 
 function getCommentUser(comment) {
   return comment?.commentCreator || {};
@@ -44,7 +55,8 @@ function CommentSkeleton() {
 }
 
 export default function Comments({ postId }) {
-  const [likedComments, setLikedComments] = useState({});
+  const [replyTo, setReplyTo] = useState(null);
+  const [shownRepliesFor, setShownRepliesFor] = useState(null);
   const [editingComment, setEditingComment] = useState(null);
   const [editedContent, setEditedContent] = useState("");
   const [editedImage, setEditedImage] = useState(null);
@@ -151,6 +163,23 @@ export default function Comments({ postId }) {
     }
 
 
+    const {
+      data: commentsReplies,
+      mutate: commentRepliesMutate,
+      isPending: commentRepliesPen,
+    } = useMutation({
+      mutationFn:({postId,commId})=>getCommentReplies(postId,commId),
+      onSuccess:(_, variables)=>{
+        setShownRepliesFor(variables.commId);
+      },
+      onError:(error)=>{
+        console.log(error.message);
+        
+      }
+    })
+
+    console.log(commentsReplies);
+    
   if(updateCommIserror) {
     return error.message;
   }
@@ -355,17 +384,50 @@ export default function Comments({ postId }) {
 
                         {comment?.likes.length}
 
-                        <button type="button">
+                        <button
+                          type="button"
+                          onClick={() => setReplyTo({
+                            name,
+                            commentId,
+                          })}
+                        >
                           <FiMessageCircle aria-hidden="true" /> Reply
                         </button>
+                          
+                          <button
+                            type="button"
+                            onClick={() =>
+                              commentRepliesMutate({
+                                postId,
+                                commId: commentId,
+                              })
+                            }
+                          >
+                            Show Replies {getReplyCount(
+                              shownRepliesFor === commentId
+                                ? commentsReplies
+                                : null,
+                              comment,
+                            )}
+                          </button>
                       </div>
+                      {shownRepliesFor === commentId && (
+                        <CommentReplies
+                          data={commentsReplies}
+                          isLoading={commentRepliesPen}
+                        />
+                      )}
                     </div>
                   </article>
                 );
               })}
             </div>
           )}
-          <CreateComment postId={postId} />
+          <CreateComment
+            postId={postId}
+            replyTo={replyTo}
+            onSubmitted={() => setReplyTo(null)}
+          />
         </>
       )}
     </section>
