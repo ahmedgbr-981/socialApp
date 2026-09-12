@@ -11,7 +11,7 @@ import relativeTime from "dayjs/plugin/relativeTime";
 
 import "./PostCard.css";
 import { Link } from "react-router-dom";
-import { DrawerTrigger, Dropdown, Label, Modal } from "@heroui/react";
+import { DrawerTrigger, Dropdown, Label, Modal, ModalTrigger } from "@heroui/react";
 import { FaBookmark, FaImage, FaPen, FaRegTrashAlt } from "react-icons/fa";
 import { IoMdCloseCircle } from "react-icons/io";
 import CreateComment from "../CreateComment";
@@ -21,10 +21,18 @@ import bookMark_unBookMark from "../../api/bookMark_unBookMark.api";
 import follow_unfollow_user from "../../api/follow&unfollow.api";
 import Swal from "sweetalert2";
 import sharePostApi from "../../api/sharePostApi.api";
+import { useState } from "react";
 
 dayjs.extend(relativeTime);
 
 export default function PostCard({ post, followingArr, sharedBy }) {
+  const [shareCapModal, setShareCapModal] = useState(false)
+  const [caption, setCaption] = useState('')
+  const originalPost = post?.isShare ? post?.sharedPost ?? post : post;
+  const shareCaption = post?.isShare ? post?.body : "";
+  const activePost = post?.isShare ? post : originalPost;
+  const postOwner = activePost?.user ?? post?.user;
+  const originalAuthor = originalPost?.user ?? null;
   const {
     authorName,
     avatar,
@@ -47,7 +55,7 @@ export default function PostCard({ post, followingArr, sharedBy }) {
     setIsEditModalOpen,
     showCommentForm,
     setShowCommentForm,
-  } = usePostCard(post);
+  } = usePostCard(activePost);
 
   const queryClient = useQueryClient();
   const sharerName = sharedBy?.name || sharedBy?.userName || "Someone";
@@ -82,8 +90,10 @@ export default function PostCard({ post, followingArr, sharedBy }) {
   });
 
   const { mutate: sharePostMutate } = useMutation({
-    mutationFn: sharePostApi,
+    mutationFn: ({ id, body }) => sharePostApi(id, { body }),
     onSuccess: () => {
+      setCaption("");
+      setShareCapModal(false);
       queryClient.invalidateQueries({
         queryKey: ["allPosts"],
       });
@@ -103,29 +113,25 @@ export default function PostCard({ post, followingArr, sharedBy }) {
     },
   });
 
-  function sharePost(id) {
-    sharePostMutate(id);
+
+  function handleShareSubmit(event) {
+    event.preventDefault();
+
+    if (!caption.trim()) {
+      Swal.fire({
+        title: "Add a caption before sharing",
+        icon: "warning",
+      });
+      return;
+    }
+
+    const targetPostId = originalPost?._id ?? post?._id;
+    sharePostMutate({ id: targetPostId, body: caption.trim() });
   }
-``
+
   return (
     <>
       <article className="post-card relative">
-        {isSharedPost && (
-          <div className="flex items-center gap-2 px-2 pt-2 text-sm text-slate-600">
-            <FiShare2 aria-hidden="true" />
-            <div className="flex items-center gap-2">
-              <img
-                src={sharerAvatar}
-                alt={`${sharerName}'s avatar`}
-                className="w-6 h-6 rounded-full object-cover"
-              />
-              <span>
-                <strong>{sharerName}</strong> shared this post
-              </span>
-            </div>
-          </div>
-        )}
-
         <header className="post-card__header">
           <img
             className="post-card__avatar"
@@ -140,17 +146,25 @@ export default function PostCard({ post, followingArr, sharedBy }) {
                 {authorName}{" "}
                 <p
                   className="bg-slate-400 rounded-2xl px-2 cursor-pointer hover:bg-slate-300"
-                  onClick={() => follow_unfollow(post.user._id)}
+                  onClick={() => follow_unfollow(postOwner?._id)}
                 >
-                  {followingArr?.includes(post.user._id)
+                  {followingArr?.includes(postOwner?._id)
                     ? "Following"
                     : "Follow"}
                 </p>
               </strong>
             )}
             <span>
-              <FiClock aria-hidden="true" />{" "}
-              {createdAt ? dayjs(createdAt).fromNow() : "Just now"}
+              {isSharedPost ? (
+                <>
+                  <FiShare2 aria-hidden="true" /> shared this post
+                </>
+              ) : (
+                <>
+                  <FiClock aria-hidden="true" />{" "}
+                  {createdAt ? dayjs(createdAt).fromNow() : "Just now"}
+                </>
+              )}
             </span>
           </div>
           {isOwner ? (
@@ -176,39 +190,91 @@ export default function PostCard({ post, followingArr, sharedBy }) {
                         type="button"
                         className="flex justify-between gap-3 items-center"
                       >
-                        <Label className="text-black">Edit post</Label>
+                        <Label className="text-black">
+                          {post?.isShare ? "Edit shared caption" : "Edit post"}
+                        </Label>
                         <FaPen className="text-gray-500" />
                       </button>
                     </Dropdown.Item>
 
-                    <Dropdown.Item
-                      id="delete-file"
-                      textValue="Delete comment"
-                      variant="danger"
-                    >
-                      <button
-                        className="flex justify-between gap-3 items-center"
-                        onClick={() => {
-                          deletePost(post?._id ?? post?.id);
-                        }}
+                    {post?.isShare && (
+                      <Dropdown.Item
+                        id="unshare-file"
+                        textValue="Unshare post"
+                        variant="danger"
                       >
-                        <Label className="text-black">Delete post</Label>
-                        <FaRegTrashAlt className="text-red-500" />
-                      </button>
-                    </Dropdown.Item>
+                        <button
+                          className="flex justify-between gap-3 items-center"
+                          onClick={() => {
+                            Swal.fire({
+                              title: "Unshare this post?",
+                              text: "This will remove the shared post from your feed.",
+                              icon: "warning",
+                              showCancelButton: true,
+                              confirmButtonText: "Yes, unshare",
+                              cancelButtonText: "Cancel",
+                            }).then((result) => {
+                              if (result.isConfirmed) {
+                                deletePost(post?._id ?? post?.id);
+                              }
+                            });
+                          }}
+                        >
+                          <Label className="text-black">Unshare post</Label>
+                          <FaRegTrashAlt className="text-red-500" />
+                        </button>
+                      </Dropdown.Item>
+                    )}
+
+                    {!post?.isShare && (
+                      <Dropdown.Item
+                        id="delete-file"
+                        textValue="Delete comment"
+                        variant="danger"
+                      >
+                        <button
+                          className="flex justify-between gap-3 items-center"
+                          onClick={() => {
+                            deletePost(originalPost?._id ?? post?._id ?? post?.id);
+                          }}
+                        >
+                          <Label className="text-black">Delete post</Label>
+                          <FaRegTrashAlt className="text-red-500" />
+                        </button>
+                      </Dropdown.Item>
+                    )}
                   </Dropdown.Menu>
                 </Dropdown.Popover>
               </Dropdown>
             </span>
           ) : null}
         </header>
+        {isSharedPost && shareCaption && (
+          <div className="text-sm text-slate-700 pb-4 ps-6 border-b border-b-gray-600">
+            <span className="font-medium"></span> {shareCaption}
+          </div>
+        )}
 
-        <Link to={`/postdetailes/${post._id}`}>
-          {post?.body && <p className="post-card__body">{post.body}</p>}
 
-          {postImage && (
+        {isSharedPost && originalAuthor && (
+          <div className="flex items-center gap-2 px-3 pb-2 text-sm text-slate-600 mt-2">
+            <img
+              src={originalAuthor.photo || "https://ui-avatars.com/api/?name=User"}
+              alt={`${originalAuthor.name || "Original author"}'s avatar`}
+              className="w-5 h-5 rounded-full object-cover"
+            />
+            <span>
+              <strong>{originalAuthor.name || originalAuthor.userName || "Someone"}</strong>
+            </span>
+          </div>
+        )}
+
+        <Link to={`/postdetailes/${originalPost?._id ?? post?._id}`}>
+          {originalPost?.body && <p className="post-card__body">{originalPost.body}</p>}
+
+          {originalPost?.image && (
             <div className="post-card__media rounded-2xl">
-              <img src={postImage} alt="Post attachment" loading="lazy" />
+              <img src={originalPost.image} alt="Post attachment" loading="lazy" />
             </div>
           )}
         </Link>
@@ -245,26 +311,49 @@ export default function PostCard({ post, followingArr, sharedBy }) {
           >
             <FiMessageCircle aria-hidden="true" /> Comment
           </button>
-          <button
+        
+
+          <Modal isOpen={shareCapModal} onOpenChange={setShareCapModal}>
+            <ModalTrigger>
+                <button
             className="post-card__action"
             type="button"
-            onClick={() => {
-              Swal.fire({
-                title: "Do you want to share this post?",
-                icon: "question",
-                showCancelButton: true,
-                confirmButtonColor: "#3085d6",
-                cancelButtonColor: "#d33",
-                confirmButtonText: "Yes, share it!",
-              }).then((result) => {
-                if (result.isConfirmed) {
-                  sharePost(post._id);
-                }
-              });
-            }}
+            
           >
             <FiShare2 aria-hidden="true" /> Share
           </button>
+            </ModalTrigger>
+          <Modal.Backdrop>
+            <Modal.Container>
+              <Modal.Dialog className="sm:max-w-90">
+                <Modal.CloseTrigger />
+                <Modal.Header>
+                  <Modal.Heading>Add caption</Modal.Heading>
+                </Modal.Header>
+                <Modal.Body>
+                  <form onSubmit={handleShareSubmit}>
+                    <textarea
+                      value={caption}
+                      onChange={(e) => setCaption(e.target.value)}
+                      type="text"
+                      className="bg-slate-300 w-full rounded-2xl p-3 resize-none"
+                      placeholder="Write something..."
+                    ></textarea>
+
+                    <button
+                      type="submit"
+                      className="text-black w-full bg-gray-600 rounded-2xl py-2 cursor-pointer"
+                    >
+                      Share
+                    </button>
+                  </form>
+                </Modal.Body>
+                <Modal.Footer></Modal.Footer>
+              </Modal.Dialog>
+            </Modal.Container>
+          </Modal.Backdrop>
+        </Modal>
+
           <button
             className="text-2xl cursor-pointer"
             type="button"
@@ -285,7 +374,9 @@ export default function PostCard({ post, followingArr, sharedBy }) {
               <Modal.Dialog className="sm:max-w-90">
                 <Modal.CloseTrigger />
                 <Modal.Header>
-                  <Modal.Heading>Edit post</Modal.Heading>
+                  <Modal.Heading>
+                    {post?.isShare ? "Edit shared caption" : "Edit post"}
+                  </Modal.Heading>
                 </Modal.Header>
                 <Modal.Body>
                   <form onSubmit={handleSubmit(sendUpdates)}>
@@ -331,6 +422,9 @@ export default function PostCard({ post, followingArr, sharedBy }) {
             </Modal.Container>
           </Modal.Backdrop>
         </Modal>
+
+
+        
 
         {showCommentForm && (
           <div className=" bg-slate-700/5 flex justify-center items-center">
