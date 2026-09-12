@@ -21,16 +21,27 @@ import bookMark_unBookMark from "../../api/bookMark_unBookMark.api";
 import follow_unfollow_user from "../../api/follow&unfollow.api";
 import Swal from "sweetalert2";
 import sharePostApi from "../../api/sharePostApi.api";
-import { useState } from "react";
+import { useContext, useState } from "react";
+import { UserContext } from "../Context/UserContext";
 
 dayjs.extend(relativeTime);
 
+function getUserId(user) {
+  return typeof user === "object" ? user?._id ?? user?.id : user;
+}
+
+function isFollowing(followingArr, userId) {
+  return followingArr?.some((followingUser) => getUserId(followingUser) === userId);
+}
+
 export default function PostCard({ post, followingArr, sharedBy }) {
+  const { logedUserid } = useContext(UserContext);
   const [shareCapModal, setShareCapModal] = useState(false)
   const [caption, setCaption] = useState('')
-  const originalPost = post?.isShare ? post?.sharedPost ?? post : post;
-  const shareCaption = post?.isShare ? post?.body : "";
-  const activePost = post?.isShare ? post : originalPost;
+  const isSharedPost = Boolean(post?.isShare || post?.sharedPost || sharedBy);
+  const originalPost = isSharedPost ? post?.sharedPost ?? post : post;
+  const shareCaption = isSharedPost && originalPost !== post ? post?.body : "";
+  const activePost = isSharedPost ? post : originalPost;
   const postOwner = activePost?.user ?? post?.user;
   const originalAuthor = originalPost?.user ?? null;
   const {
@@ -60,7 +71,11 @@ export default function PostCard({ post, followingArr, sharedBy }) {
   const queryClient = useQueryClient();
   const sharerName = sharedBy?.name || sharedBy?.userName || "Someone";
   const sharerAvatar = sharedBy?.photo || "https://ui-avatars.com/api/?name=User";
-  const isSharedPost = Boolean(sharedBy);
+  const originalAuthorId = originalAuthor?._id ?? originalAuthor?.id;
+  const currentUserId = typeof logedUserid === "object"
+    ? logedUserid?._id ?? logedUserid?.id
+    : logedUserid;
+  const isOriginalAuthorOwner = originalAuthorId === currentUserId;
   const { mutate } = useMutation({
     mutationFn: (id) => bookMark_unBookMark(id),
     onSuccess: () => {
@@ -82,6 +97,9 @@ export default function PostCard({ post, followingArr, sharedBy }) {
       });
       queryClient.invalidateQueries({
         queryKey: ["profile"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["myPosts"],
       });
       // console.log('followed');
       // console.log(followingData);
@@ -148,7 +166,7 @@ export default function PostCard({ post, followingArr, sharedBy }) {
                   className="bg-slate-400 rounded-2xl px-2 cursor-pointer hover:bg-slate-300"
                   onClick={() => follow_unfollow(postOwner?._id)}
                 >
-                  {followingArr?.includes(postOwner?._id)
+                  {isFollowing(followingArr, getUserId(postOwner))
                     ? "Following"
                     : "Follow"}
                 </p>
@@ -157,7 +175,7 @@ export default function PostCard({ post, followingArr, sharedBy }) {
             <span>
               {isSharedPost ? (
                 <>
-                  <FiShare2 aria-hidden="true" /> shared this post
+                  <FiShare2 aria-hidden="true" /> {sharerName} shared this post
                 </>
               ) : (
                 <>
@@ -264,8 +282,18 @@ export default function PostCard({ post, followingArr, sharedBy }) {
               className="w-5 h-5 rounded-full object-cover"
             />
             <span>
+              Originally posted by{" "}
               <strong>{originalAuthor.name || originalAuthor.userName || "Someone"}</strong>
             </span>
+            {originalAuthorId && !isOriginalAuthorOwner && (
+              <button
+                type="button"
+                className="bg-slate-400 rounded-2xl px-2 cursor-pointer hover:bg-slate-300"
+                onClick={() => follow_unfollow(originalAuthorId)}
+              >
+                {isFollowing(followingArr, originalAuthorId) ? "Following" : "Follow"}
+              </button>
+            )}
           </div>
         )}
 

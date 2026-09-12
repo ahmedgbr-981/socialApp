@@ -143,8 +143,8 @@ export default function Profile() {
         </nav>
       </section>
 
-      <div className="flex flex-col lg:flex-row w-[75%] gap-4 mt-4 mx-auto">
-        <section className="" id="about">
+      <div className="profile-content">
+        <section className="profile-panel profile-panel--about" id="about">
           <h2>Info</h2>
           <div className="profile-details">
             {data?.email && <p><FiMail aria-hidden="true" /> {data.email}</p>}
@@ -154,7 +154,7 @@ export default function Profile() {
         </section>
 
         <section className="profile-panel profile-panel--posts " id="posts">
-         <div className='w-[70%] mx-auto'>
+         <div className='w-full sm:w-[70%] mx-auto'>
            <CreatePost userPhoto={data.photo}/>
          </div>
           <div className="profile-panel__heading">
@@ -162,7 +162,18 @@ export default function Profile() {
           </div>
           {myPostsIsLoading && <Loading />}
           {
-            myPosts? myPosts.map((post)=>{return <PostCard key={post._id} post={post}/>}):<p>your posts will apear here</p>
+            myPosts? myPosts.map((post)=>{
+              const sharedBy = post?.isShare || post?.sharedPost ? post?.user : null;
+
+              return (
+                <PostCard
+                  key={post._id}
+                  post={post}
+                  sharedBy={sharedBy}
+                  followingArr={data?.following}
+                />
+              )
+            }):<p>your posts will apear here</p>
           }
         </section>
       </div>

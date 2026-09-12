@@ -29,7 +29,7 @@ export default function Home() {
       <CreatePost userPhoto={myPro?.photo} />
       <FollowSuggestions followingArr={myPro?.following} />
       {data?.map((post) => {
-        const sharedBy = post?.isShare ? post?.user : null;
+        const sharedBy = post?.isShare || post?.sharedPost ? post?.user : null;
 
         return (
           <PostCard

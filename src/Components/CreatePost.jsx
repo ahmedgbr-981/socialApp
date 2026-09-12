@@ -72,7 +72,7 @@ export default function CreatePost({ userPhoto: passedUserPhoto } = {}) {
           <ModalTrigger>
             <input
               type="text"
-              className="bg-white rounded-2xl w-130 p-2 text-black"
+              className="w-full max-w-[520px] rounded-2xl bg-white p-2 text-black"
               readOnly
               placeholder="what's on your mind"
             />
