@@ -12,6 +12,7 @@ import AuthRoute from "./Components/AuthRoute";
 import ProtectedRoute from "./Components/ProtectedRoute";
 import Postdetailes from "./Components/Postdetailes";
 import Bookmarks from "./Components/Bookmarks/Bookmarks";
+import Notifications from "./Components/Notifications/Notifications";
 
 const query = new QueryClient();
 const router = createHashRouter([
@@ -38,6 +39,10 @@ const router = createHashRouter([
       {
         path: "bookmarks",
         element:<ProtectedRoute> <Bookmarks /></ProtectedRoute>,
+      },
+      {
+        path: "notifications",
+        element:<ProtectedRoute> <Notifications /></ProtectedRoute>,
       },
       {
         path: "login",
