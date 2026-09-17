@@ -11,7 +11,7 @@ export default function Layout() {
     <>
     
     <Navbar/>
-    <div className='min-h-screen my-10'>
+    <div className='min-h-screen mt-25'>
             <Outlet/>
 
     </div>

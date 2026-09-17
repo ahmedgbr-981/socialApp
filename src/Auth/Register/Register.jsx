@@ -6,6 +6,7 @@ import useCreatAccount from "../../Hooks/useCreatAccount";
 import z from "zod";
 import ErrorMess from "../../Components/ErroMess/ErrorMess";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Link } from "react-router-dom";
 
 export default function Register() {
   const { mutate, isPending } = useCreatAccount();
@@ -146,6 +147,8 @@ export default function Register() {
           >
            <span className="flex justify-center ">{isPending ? <AiOutlineLoading className="animate-spin text-2xl" />:' Create Account'}</span>
           </button>
+          <div className="py-3 dark:text-white">Already have an account? <Link to={'/login'} className="text-blue-400 hover:text-blue-300 cursor-pointer underline">Sign in</Link></div>
+
         </div>
       </form>
     </>

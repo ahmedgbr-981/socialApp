@@ -10,7 +10,7 @@ import axios from "axios";
 import { useMutation } from "@tanstack/react-query";
 import { toast } from "react-toastify";
 import Swal from "sweetalert2";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { UserContext } from "../../Components/Context/UserContext";
 
 export default function Login() {
@@ -79,9 +79,9 @@ export default function Login() {
     <>
       <form
         onSubmit={handleSubmit(sendSignInData)}
-        className="text-black dark:text-white"
+        className="text-black dark:text-white min-h-screen flex items-center justify-center"
       >
-        <div className="text-center ">
+        <div className="text-center w-full">
           <label htmlFor="" className="pb-5 text-blue-300 text-3xl font-bold">
             Sign In
           </label>
@@ -119,6 +119,7 @@ export default function Login() {
           >
            <span className="flex justify-center ">{isPending ? <AiOutlineLoading className="animate-spin text-2xl" />:'Sign In'}</span>
           </button>
+          <div className="py-3 dark:text-white">Don't have an account? <Link to={'/'} className="text-blue-400 hover:text-blue-300 cursor-pointer underline">Sign Up</Link></div>
         </div>
       </form>
     </>
